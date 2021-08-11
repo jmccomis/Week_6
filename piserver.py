@@ -60,7 +60,7 @@ def getTemperature():
 @webApplication.route('/Temperature/Setpoint/<int:value>', methods=['PUT'])
 def putSetpoint(value):
     global temperatureSetpoint
-    temperatureSetpoint = value
+    configureSetpoint(value)
     return {'temperature': readTemperature(), 'setpoint': temperatureSetpoint}
 
 
