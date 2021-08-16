@@ -1,15 +1,14 @@
-from flask import Flask
+from flask import Flask,jsonify
 from threading import Thread, Event
 from time import sleep
 import random
-from pyowm import OWM
-from pyowm.utils import config
-from pyowm.utils import timestamps
+
+import Adafruit_DHT as dht
 
 from gpiozero import Button,LED
+DHT = 4
 led= LED(18)
-owm = OWM('60e28eb1145d5d9330745ad3a0d5417e')
-y='Milwaukee,USA'
+
 
 temperatureSetpoint = 78
 workerEvent = Event()
@@ -25,11 +24,10 @@ def setLED(state):
 # Get a reading from the temperature sensor
 def readTemperature():
     ### TODO:  Replace this with code to actually read the sensor and return the temperature ###
-    mgr = owm.weather_manager()
-    observation = mgr.weather_at_place(y)
-    W = observation.weather
+    h,t = dht.read_retry(dht.DHT22, DHT)
+    x=(t*9/5)+32
     
-    return (W.temperature('fahrenheit').get('temp'))
+    return x #(W.temperature('fahrenheit').get('temp'))
 
 # Set the temperature setpoint
 def configureSetpoint(value):
@@ -66,14 +64,14 @@ webApplication = Flask(__name__)
 @webApplication.route('/Temperature', methods=['GET'])
 def getTemperature():
     global temperatureSetpoint
-    return {'temperature': readTemperature(), 'setpoint': temperatureSetpoint}
+    return jsonify({'temperature': readTemperature(), 'setpoint': temperatureSetpoint})
 
 # Route to set setpoint with PUT request
 @webApplication.route('/Temperature/Setpoint/<int:value>', methods=['PUT'])
 def putSetpoint(value):
     global temperatureSetpoint
     configureSetpoint(value)
-    return {'temperature': readTemperature(), 'setpoint': temperatureSetpoint}
+    return jsonify({'temperature': readTemperature(), 'setpoint': temperatureSetpoint})
 
 
 # Launch worker thread
